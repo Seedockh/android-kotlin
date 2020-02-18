@@ -9,7 +9,7 @@
 
     <fragment
         android:id="@+id/tasklist"
-        android:name="tasklist.TaskListFragment"
+        android:name="com.example.todoherissepierre.tasklist.TaskListFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="Hello World!"

@@ -1,23 +1,31 @@
 package com.example.todoherissepierre.tasklist
 
 import android.content.Intent
+import android.net.Network
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.todoherissepierre.R
+import com.example.todoherissepierre.network.Api
 import com.example.todoherissepierre.task.TaskActivity
 import kotlinx.android.synthetic.main.fragment_task_list.*
 import kotlinx.android.synthetic.main.item_task.*
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.util.*
 import kotlin.collections.ArrayList
 
 class TaskListFragment : Fragment() {
+    private val tasksRepository = TasksRepository()
     private var taskList: MutableList<Task> = mutableListOf()
+    private val coroutineScope = MainScope()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,8 +62,36 @@ class TaskListFragment : Fragment() {
         }
 
         adapter.onDeleteClickListener = {
-            taskList.remove(it)
+            lifecycleScope.launch {
+                Log.i("ID to delete => ", it.id)
+                tasksRepository.deleteTask(it.id)
+                taskList.remove(it)
+                coroutineScope.launch { tasksRepository.refresh() }
+                adapter.notifyDataSetChanged()
+            }
+        }
+
+        // Ici on ne va pas gérer les cas d'erreur donc on force le crash avec "!!"
+        coroutineScope.launch {
+            val userInfo = Api.userService.getInfo().body()!!
+            val suspendTask = Api.tasksWebService.getTasks().body()!!
+
+            list_title.text = "${userInfo.firstName} ${userInfo.lastName}"
+            taskList = suspendTask.toMutableList()
             adapter.notifyDataSetChanged()
+        }
+
+        tasksRepository.taskList.observe(this, androidx.lifecycle.Observer {
+            taskList.clear()
+            taskList.addAll(it)
+            adapter.notifyDataSetChanged()
+        })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            tasksRepository.refresh()
         }
     }
 

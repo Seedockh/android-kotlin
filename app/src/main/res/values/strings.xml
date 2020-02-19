@@ -9,4 +9,5 @@
     <string name="button_delete_description">Button to delete task</string>
     <string name="button_edit_description">Button to edit task</string>
     <string name="edit_button_text">Edit</string>
+    <string name="list_title">List</string>
 </resources>
